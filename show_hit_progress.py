@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
   counter = Counter()
   for idx, hit_id in enumerate(hit_ids):
-    print 'Checking HIT %d / %d' % (idx + 1, len(hit_ids))
+    print 'Checking HIT %3d of %d' % (idx + 1, len(hit_ids))
     try:
       hit = mtc.get_hit(hit_id)[0]
     except:

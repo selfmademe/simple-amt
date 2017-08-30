@@ -22,6 +22,9 @@ if __name__ == '__main__':
   simpleamt.setup_qualifications(hit_properties, mtc)
 
   frame_height = hit_properties.pop('frame_height')
+  # print '-' * 80
+  # print args.config
+  # print '-' * 80
   env = simpleamt.get_jinja_env(args.config)
   template = env.get_template(args.html_template)
 

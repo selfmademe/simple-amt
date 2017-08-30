@@ -14,7 +14,10 @@ def get_jinja_env(config):
   """
   Get a jinja2 Environment object that we can use to find templates.
   """
-  return Environment(loader=FileSystemLoader('.'))
+  if 'template_directories' in config:
+    return Environment(loader=FileSystemLoader(config['template_directories']))
+  else:
+    return Environment(loader=FileSystemLoader('.'))
 
 
 def json_file(filename):
@@ -72,6 +75,8 @@ def setup_qualifications(hit_properties, mtc):
   Replace some of the human-readable keys from the raw HIT properties
   JSON data structure with boto-specific objects.
   """
+  # print hit_properties
+  # import sys; sys.exit(1)
   qual = Qualifications()
   if 'qualification_id' in hit_properties and 'qualification_comparator' in hit_properties and 'qualification_integer' in hit_properties:
     comparator = hit_properties['qualification_comparator']
