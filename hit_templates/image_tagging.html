@@ -1,0 +1,303 @@
+<html>
+  <head>
+    <script src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js'></script>
+    <script src='//cdnjs.cloudflare.com/ajax/libs/json3/3.3.2/json3.min.js'></script>
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">    
+    <script src='//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js'></script>
+
+    <!-- Open internal style sheet -->
+    <style type="text/css">.thumbnail label{
+      display: block;
+      position: relative;
+      border-radius:2px;
+    }
+    .thumbnail label:hover {
+      cursor: pointer;
+    }
+    .thumbnail:hover{
+        border: 1px solid #337ab7;
+    }
+    .thumbnail img{
+        height:180px;
+    }
+    .thumbnail input{
+      display: block;
+      position: absolute;
+      top:0;
+      left:0;
+    }
+    #checkbox_none{
+      display: inline-block;
+      top:3px;
+    }
+    #label_none{
+      margin: 0;
+      padding: 5px 10px;
+    }
+    #label_none span{
+      margin-left: 15px;
+    }
+    #submitButton{
+      white-space: normal;
+    }
+    #collapseTrigger{
+      color:#fff;
+      display: block;
+      text-decoration: none;
+    }
+    .selected{
+      background: #dff0d8;
+    }
+    </style>
+  </head>
+  <body>
+
+    <!-- Instructions -->
+    <div class="container" id="ModerationOfAnImage">
+      <div class="row">
+        <div class="col-xs-12 col-md-12"><!-- Instructions -->
+          <div class="panel panel-primary"><!-- WARNING: the ids "collapseTrigger" and "instructionBody" are being used to enable expand/collapse feature -->
+            <a class="panel-heading" href="javascript:void(0);" id="collapseTrigger">
+            <strong>Image Moderation Instructions</strong><span class="collapse-text"></span></a>
+            <div class="panel-body" id="instructionBody">
+            <p>Select images that contain at least one person practicing yoga.</p>
+            <img src="https://s3.amazonaws.com/selfmade-mturk/hit01/example_good_bad.jpg" /></div>
+          </div>      
+        </div>
+      </div>
+    </div>
+
+    {% include "simpleamt.html" %}
+
+    <script>
+      var N_IMAGES = 36;
+      
+      $(document).ready(function() {
+       var N_ROWS = 6;
+       var N_COLS = 6;
+
+       var imIdx = 0;
+       for (var i = 0; i < N_ROWS; i++) {
+         // create new row
+         var row = document.createElement("div");
+         row.classList.add("row");
+         row.id = "work_content";
+
+         for (var j = 0; j < N_COLS; j++, imIdx += 1) {
+           var col = document.createElement("div");
+           col.classList.add("col-xs-12");
+           col.classList.add("col-sm-6");
+           col.classList.add("col-md-4");
+           col.classList.add("col-lg-2");
+
+           var thumbnail = document.createElement("div");
+           thumbnail.classList.add("thumbnail");
+
+           var label = document.createElement("label");
+           label.htmlFor = "checkbox" + imIdx;
+           label.classList.add('image-to-label');
+
+           var img = document.createElement("img");
+           img.classList.add("img-responsive");
+           img.classList.add("center-block");
+           img.alt = "image" + imIdx;
+           img.id = "image" + imIdx;
+
+           var input = document.createElement("input");
+           input.id = "checkbox" + imIdx;
+           input.name = "selected";
+           input.type = "checkbox";
+           input.value = "image" + imIdx;
+
+           label.appendChild(img);
+           label.appendChild(input);
+           thumbnail.appendChild(label);
+           col.appendChild(thumbnail);
+           row.appendChild(col);
+         }
+
+         document.getElementById("ModerationOfAnImage").appendChild(row);
+       }
+
+       // Instructions expand/collapse
+       // var content = $('#instructionBody');
+       // var trigger = $('#collapseTrigger');
+       // content.hide();
+       // $('.collapse-text').text('(Click to expand)');
+       // trigger.click(function() {
+       //   content.toggle();
+       //   var isVisible = content.is(':visible');
+       //   if (isVisible) {
+       //     $('.collapse-text').text('(Click to collapse)');
+       //   } else {
+       //     $('.collapse-text').text('(Click to expand)');
+       //   }
+       // });
+       // end expand/collapse
+
+       // The "None of the Above" checkbox selector
+       var checkAllCheckboxSelector = 'input:checkbox.moderationImageCheckAll';
+       // When any checkbox, excluding the "None of the Above" checkbox, is
+       // checked, uncheck the "None of the Above" checkbox
+       $('input:checkbox').not(checkAllCheckboxSelector).change(function() {
+         if ($(this).is(':checked')) {
+           $(checkAllCheckboxSelector).prop('checked', false);
+           $(checkAllCheckboxSelector).parents('.thumbnail').removeClass('selected');
+           $(this).parents('.thumbnail').addClass('selected');
+         } else {
+           $(this).parents('.thumbnail').removeClass('selected');
+         }
+       });
+
+       // When the "None of the Above" checkbox is checked, uncheck all other
+       // checkboxes.
+       $(checkAllCheckboxSelector).change(function() {
+         var $this = $(this);
+         if ($this.is(':checked')) {
+           $('input:checkbox:checked').not($this).prop('checked', false);
+           $('.thumbnail').removeClass('selected');
+           $this.parents('.thumbnail').addClass('selected');
+         } else {
+           $this.parents('.thumbnail').removeClass('selected');
+         }
+       });
+      });
+
+      function inputIsValid() {
+        var sentinelCheckPassed = true;
+        $.each($(".image-to-label"), function(idx, elem) {
+          var imgUrl = elem.children[0].src;
+ 
+          if (imgUrl.indexOf("_pos_") >= 0) {
+            if (!elem.children[1].checked) {
+              console.log("missed pos");
+              sentinelCheckPassed = false;
+            }
+          } else if (imgUrl.indexOf("_neg_") >= 0) {
+            if (elem.children[1].checked) {
+              sentinelCheckPassed = false;
+              console.log("marked neg");
+            }
+          }
+        });
+
+        return sentinelCheckPassed;
+      }
+
+      function getResults() {
+        var results = [];
+
+        $.each($(".image-to-label"), function(idx, elem) {
+          var imgUrl = elem.children[0].src;
+          var checked = elem.children[1].checked;
+
+          results.push({'image_url': imgUrl, 'is_checked': checked});
+        });
+
+        return results;
+      }
+
+      $(function() {
+        // Define default input to be used when developing this HIT.
+        var DEFAULT_INPUT = [
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/sentinels/neg/15624805_218535421936326_8900221046850846720_n_neg_.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/sentinels/pos/16583989_1366373993402548_5443868208706617344_n_pos_.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16788888_1790703527919882_3325933832623882240_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/21041282_114933562487215_5653972824801411072_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465498_1693153937365297_3358278956452151296_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16583943_383580905348891_6563695414044786688_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16583571_266534233781196_268037093488328704_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16463895_288547078229778_4156584390320717824_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465221_372092979841914_9048862172678979584_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16585095_1885343091700657_928197030289866752_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465371_1889073957988948_8693817532924035072_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465426_962193060581519_7137481441104887808_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16788749_1002612953200922_6257781686872834048_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465807_1723060124691306_7520415652859871232_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/20987440_474967036195419_967386635475877888_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16583475_383762681995670_9058354737597906944_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465229_1378088345588296_8704992372108296192_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465677_1201019250017695_2704826495846580224_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16464524_1224007557715545_4478400036337614848_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/20986995_486677168367072_5106324366681964544_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465432_269463903482408_615843364729782272_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16584028_1861768617368653_2802410691137372160_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16584095_259547427806229_4846568206363525120_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465107_1854062771483610_2246878884970627072_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465525_577205322477501_2279549210837647360_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16789010_1811501712444470_1267881621453799424_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16583700_1269417166460656_9027444875875844096_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16583662_764382317045714_7514821294748073984_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16465789_1259789037438389_7532355387064844288_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/21041789_127193611242847_5379577990009061376_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16585078_1853480478232524_5137827440697016320_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16464985_392152364477955_1543076909301104640_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16585699_267031397058621_489398166030909440_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16583261_313492269053641_7886385272076632064_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16583686_406930072988788_1388158508381241344_n.jpg',
+          'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16584013_639232442932086_2096434534303137792_n.jpg'
+        ];
+ 
+        function main() {
+          // Read input to the HIT. In development the default input will be
+          // used, and in deployment actual input will be used.
+          var input = simpleamt.getInput(DEFAULT_INPUT);
+          input = _.shuffle(input); 
+ 
+          // Use the input to set up the UI.
+          $('span.category').text(input.category);
+          _.each(input, function(elem, idx) {
+            $('#image' + idx).attr('src', elem);
+          });
+
+          _.each(_.range(N_IMAGES), function(elem, idx, list) {
+            $('#checkbox' + idx).prop('disabled', true);
+          });
+ 
+          // If the HIT is not in preview mode, then we need to enable the UI
+          // and set up the logic for submitting.
+          if (!simpleamt.isPreview()) {
+            enable_ui();
+ 
+            // You need to call this in every HIT; if you forget then you will
+            // get an error message when you try and submit the HIT.
+            simpleamt.setupSubmit();
+ 
+            // Set up a click handler for the submit button.
+            // Typically this will validate user output and either submit the
+            // HIT if the data is good or show an error message to the user if
+            // the data is bad. If this click handler returns false then the
+            // HIT will not be submitted.
+            // WARNING: If the click handler throws an exception
+            // then by default the HIT will be submitted; this is a fertile
+            // source of bugs.
+            $('#submit-btn').click(function() {
+              // Construct an object containing the output of this assignment.
+
+              if(!inputIsValid()) {
+                alert("Looks like you got some items wrong, please try a little harder :)");
+                return false;
+              }
+
+              var output = getResults(); 
+              simpleamt.setOutput(output);
+            })
+          }
+
+        }
+
+        function enable_ui() {
+          // Enable the UI specific to our HIT.
+          _.each(_.range(N_IMAGES), function(elem, idx, list) {
+            $('#checkbox' + idx).prop('disabled', false);
+          });
+
+          // Enable the submit button. You must do this in every HIT.
+          $('#submit-btn').prop('disabled', false);
+        }
+
+        main();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "title": "Moderation of an Image",
+  "description": "Identify images of people practicing yoga.",
+  "keywords": "image,images,tagging,tag",
+  "reward": 0.05,
+  "duration": 900,
+  "frame_height": 3600,
+  "max_assignments": 1,
+  "country": ["US"],
+  "hits_approved": 0,
+  "percent_approved": 95
+}
