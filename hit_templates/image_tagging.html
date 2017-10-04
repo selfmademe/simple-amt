@@ -2,7 +2,7 @@
   <head>
     <script src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/json3/3.3.2/json3.min.js'></script>
-    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">    
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
     <script src='//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js'></script>
 
     <!-- Open internal style sheet -->
@@ -60,9 +60,15 @@
             <a class="panel-heading" href="javascript:void(0);" id="collapseTrigger">
             <strong>Image Moderation Instructions</strong><span class="collapse-text"></span></a>
             <div class="panel-body" id="instructionBody">
-            <p>Select images that contain at least one person practicing yoga.</p>
-            <img src="https://s3.amazonaws.com/selfmade-mturk/hit01/example_good_bad.jpg" /></div>
-          </div>      
+            <p>Select images that contain face close-ups with makeup.</p>
+            <ul>
+              <li>NO drawings of people, images must be photos.</li>
+              <li>NO product shots (shots that show <strong>only</strong> makeup products).</li>
+              <li>YES full face or closeups (eyes, mouth, lips, etc.).</li>
+              <li>YES face must have some makeup on.</li>
+            </ul>
+            <img src="https://s3.amazonaws.com/selfmade-mturk/hit02/example_good_bad.jpg" /></div>
+          </div>
         </div>
       </div>
     </div>
@@ -71,7 +77,7 @@
 
     <script>
       var N_IMAGES = 36;
-      
+
       $(document).ready(function() {
        var N_ROWS = 6;
        var N_COLS = 6;
@@ -167,13 +173,13 @@
         var sentinelCheckPassed = true;
         $.each($(".image-to-label"), function(idx, elem) {
           var imgUrl = elem.children[0].src;
- 
-          if (imgUrl.indexOf("_pos_") >= 0) {
+
+          if (imgUrl.indexOf("/pos/") >= 0) {
             if (!elem.children[1].checked) {
               console.log("missed pos");
               sentinelCheckPassed = false;
             }
-          } else if (imgUrl.indexOf("_neg_") >= 0) {
+          } else if (imgUrl.indexOf("/neg/") >= 0) {
             if (elem.children[1].checked) {
               sentinelCheckPassed = false;
               console.log("marked neg");
@@ -237,13 +243,13 @@
           'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16583686_406930072988788_1388158508381241344_n.jpg',
           'https://s3.amazonaws.com/selfmade-mturk/hit01/data/16584013_639232442932086_2096434534303137792_n.jpg'
         ];
- 
+
         function main() {
           // Read input to the HIT. In development the default input will be
           // used, and in deployment actual input will be used.
           var input = simpleamt.getInput(DEFAULT_INPUT);
-          input = _.shuffle(input); 
- 
+          input = _.shuffle(input);
+
           // Use the input to set up the UI.
           $('span.category').text(input.category);
           _.each(input, function(elem, idx) {
@@ -253,16 +259,16 @@
           _.each(_.range(N_IMAGES), function(elem, idx, list) {
             $('#checkbox' + idx).prop('disabled', true);
           });
- 
+
           // If the HIT is not in preview mode, then we need to enable the UI
           // and set up the logic for submitting.
           if (!simpleamt.isPreview()) {
             enable_ui();
- 
+
             // You need to call this in every HIT; if you forget then you will
             // get an error message when you try and submit the HIT.
             simpleamt.setupSubmit();
- 
+
             // Set up a click handler for the submit button.
             // Typically this will validate user output and either submit the
             // HIT if the data is good or show an error message to the user if
@@ -279,7 +285,7 @@
                 return false;
               }
 
-              var output = getResults(); 
+              var output = getResults();
               simpleamt.setOutput(output);
             })
           }
