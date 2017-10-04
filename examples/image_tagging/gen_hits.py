@@ -9,8 +9,8 @@ import json
 out_fname = sys.argv[1]
 
 sentinels = open('sentinels.txt').read().strip().split()
-n_sentinels = [s for s in sentinels if '_neg_' in s]
-p_sentinels = [s for s in sentinels if '_pos_' in s]
+n_sentinels = [s for s in sentinels if ('_neg_' in s) or ('/neg/' in s)]
+p_sentinels = [s for s in sentinels if '_pos_' in s or ('/pos/' in s)]
 data = open('data.txt').read().strip().split()
 shuffle(data)
 data_ori = copy(data)
